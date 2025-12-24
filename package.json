@@ -1,0 +1,18 @@
+{
+  "name": "finalizer-erp",
+  "version": "1.0.0",
+  "description": "ERP benzeri web uygulaması - Staj projesi",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd backend && node server.js",
+    "client": "cd frontend && npm run dev"
+  },
+  "keywords": ["erp", "muhasebe", "finans"],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
+
