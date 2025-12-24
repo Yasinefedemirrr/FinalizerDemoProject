@@ -1,0 +1,190 @@
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.title {
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 10px;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.statCard {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.statCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.statIcon {
+  font-size: 40px;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  border-radius: 12px;
+}
+
+.statContent {
+  flex: 1;
+}
+
+.statContent h3 {
+  font-size: 14px;
+  color: var(--text-light);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.statValue {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 4px;
+}
+
+.statValue.positive {
+  color: var(--success-color);
+}
+
+.statValue.negative {
+  color: var(--danger-color);
+}
+
+.statLabel {
+  font-size: 12px;
+  color: var(--text-light);
+}
+
+.chartsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  gap: 20px;
+}
+
+.chartCard {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.chartCard h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 20px;
+}
+
+.recentSection {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 20px;
+}
+
+.recentCard {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.recentCard h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 20px;
+}
+
+.recentList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.recentItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: var(--bg-light);
+  border-radius: 8px;
+  border-left: 3px solid var(--primary-color);
+}
+
+.recentItem strong {
+  display: block;
+  font-size: 14px;
+  color: var(--text-color);
+  margin-bottom: 4px;
+}
+
+.recentItem p {
+  font-size: 12px;
+  color: var(--text-light);
+}
+
+.recentAmount {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.recentAmount.positive {
+  color: var(--success-color);
+}
+
+.recentAmount.negative {
+  color: var(--danger-color);
+}
+
+.empty {
+  text-align: center;
+  color: var(--text-light);
+  padding: 40px;
+  font-size: 14px;
+}
+
+.loading,
+.error {
+  text-align: center;
+  padding: 40px;
+  font-size: 16px;
+  color: var(--text-light);
+}
+
+.error {
+  color: var(--danger-color);
+}
+
+@media (max-width: 768px) {
+  .chartsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .recentSection {
+    grid-template-columns: 1fr;
+  }
+}
+
