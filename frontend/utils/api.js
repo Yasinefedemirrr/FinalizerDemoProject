@@ -25,14 +25,17 @@ api.interceptors.request.use(
   }
 );
 
-// 401 hatası durumunda logout
+// 401 veya 403 hatası durumunda logout (token geçersiz)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && typeof window !== 'undefined') {
+    if ((error.response?.status === 401 || error.response?.status === 403) && typeof window !== 'undefined') {
+      // Token geçersiz, localStorage'ı temizle ve login'e yönlendir
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
