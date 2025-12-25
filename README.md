@@ -6,7 +6,7 @@ Finalizer firmasının geliştirdiği ERP sistemlerine benzer yapıda, muhasebe 
 
 - **Backend**: Node.js + Express.js
 - **Frontend**: Next.js + React
-- **Veri Saklama**: JSON dosyaları
+- **Veri Saklama**: PostgreSql
 - **Kimlik Doğrulama**: JWT
 
 ## Kurulum
