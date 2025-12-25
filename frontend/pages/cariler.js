@@ -40,6 +40,10 @@ export default function Cariler() {
       setFilteredCariler(response.data);
     } catch (error) {
       console.error('Error fetching cariler:', error);
+      console.error('Error response:', error.response?.data);
+      if (error.response?.status === 403) {
+        console.error('403 Forbidden - Token sorunu olabilir');
+      }
     } finally {
       setLoading(false);
     }
@@ -101,7 +105,8 @@ export default function Cariler() {
       handleCloseModal();
     } catch (error) {
       console.error('Error saving cari:', error);
-      alert('Cari kaydedilirken bir hata oluştu');
+      const errorMessage = error.response?.data?.details || error.response?.data?.error || error.message || 'Cari kaydedilirken bir hata oluştu';
+      alert(`Hata: ${errorMessage}`);
     }
   };
 
