@@ -1,5 +1,5 @@
 const express = require('express');
-const { readFile, writeFile, getNextId } = require('../utils/fileManager');
+const { Cariler } = require('../utils/dbManager');
 const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
@@ -8,21 +8,25 @@ const router = express.Router();
 router.use(authenticateToken);
 
 // Tüm carileri getir
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const cariler = readFile('cariler.json');
+    const cariler = await Cariler.getAll();
     res.json(cariler);
   } catch (error) {
     console.error('Error fetching cariler:', error);
-    res.status(500).json({ error: 'Cariler getirilirken bir hata oluştu' });
+    console.error('Error details:', error.message);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ 
+      error: 'Cariler getirilirken bir hata oluştu',
+      details: error.message 
+    });
   }
 });
 
 // Tek bir cari getir
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
-    const cariler = readFile('cariler.json');
-    const cari = cariler.find(c => c.id === parseInt(req.params.id));
+    const cari = await Cariler.getById(parseInt(req.params.id));
 
     if (!cari) {
       return res.status(404).json({ error: 'Cari bulunamadı' });
@@ -36,45 +40,33 @@ router.get('/:id', (req, res) => {
 });
 
 // Yeni cari ekle
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   try {
-    const cariler = readFile('cariler.json');
-    const newCari = {
-      id: getNextId(cariler),
-      ...req.body,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    cariler.push(newCari);
-    writeFile('cariler.json', cariler);
-
+    console.log('Cari ekleme isteği alındı:', req.body);
+    const newCari = await Cariler.create(req.body);
+    console.log('Cari başarıyla oluşturuldu:', newCari);
     res.status(201).json(newCari);
   } catch (error) {
     console.error('Error creating cari:', error);
-    res.status(500).json({ error: 'Cari oluşturulurken bir hata oluştu' });
+    console.error('Error details:', error.message);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ 
+      error: 'Cari oluşturulurken bir hata oluştu',
+      details: error.message 
+    });
   }
 });
 
 // Cari güncelle
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
-    const cariler = readFile('cariler.json');
-    const index = cariler.findIndex(c => c.id === parseInt(req.params.id));
+    const updatedCari = await Cariler.update(parseInt(req.params.id), req.body);
 
-    if (index === -1) {
+    if (!updatedCari) {
       return res.status(404).json({ error: 'Cari bulunamadı' });
     }
 
-    cariler[index] = {
-      ...cariler[index],
-      ...req.body,
-      id: parseInt(req.params.id),
-      updatedAt: new Date().toISOString()
-    };
-
-    writeFile('cariler.json', cariler);
-    res.json(cariler[index]);
+    res.json(updatedCari);
   } catch (error) {
     console.error('Error updating cari:', error);
     res.status(500).json({ error: 'Cari güncellenirken bir hata oluştu' });
@@ -82,16 +74,15 @@ router.put('/:id', (req, res) => {
 });
 
 // Cari sil
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
-    const cariler = readFile('cariler.json');
-    const filteredCariler = cariler.filter(c => c.id !== parseInt(req.params.id));
-
-    if (cariler.length === filteredCariler.length) {
+    const cari = await Cariler.getById(parseInt(req.params.id));
+    
+    if (!cari) {
       return res.status(404).json({ error: 'Cari bulunamadı' });
     }
 
-    writeFile('cariler.json', filteredCariler);
+    await Cariler.delete(parseInt(req.params.id));
     res.json({ message: 'Cari silindi' });
   } catch (error) {
     console.error('Error deleting cari:', error);

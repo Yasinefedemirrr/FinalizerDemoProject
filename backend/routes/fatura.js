@@ -1,5 +1,5 @@
 const express = require('express');
-const { readFile, writeFile, getNextId } = require('../utils/fileManager');
+const { Faturalar } = require('../utils/dbManager');
 const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
@@ -8,9 +8,9 @@ const router = express.Router();
 router.use(authenticateToken);
 
 // Tüm faturaları getir
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const faturalar = readFile('faturalar.json');
+    const faturalar = await Faturalar.getAll();
     res.json(faturalar);
   } catch (error) {
     console.error('Error fetching faturalar:', error);
@@ -19,10 +19,9 @@ router.get('/', (req, res) => {
 });
 
 // Tek bir fatura getir
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
-    const faturalar = readFile('faturalar.json');
-    const fatura = faturalar.find(f => f.id === parseInt(req.params.id));
+    const fatura = await Faturalar.getById(parseInt(req.params.id));
 
     if (!fatura) {
       return res.status(404).json({ error: 'Fatura bulunamadı' });
@@ -36,10 +35,8 @@ router.get('/:id', (req, res) => {
 });
 
 // Yeni fatura oluştur
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   try {
-    const faturalar = readFile('faturalar.json');
-    
     // Toplam hesaplamaları yap
     const lineItems = req.body.lineItems || [];
     let tutar = 0;
@@ -65,8 +62,7 @@ router.post('/', (req, res) => {
     const matrah = tutar - iskonto;
     const genelToplam = matrah + kdvTutari;
 
-    const newFatura = {
-      id: getNextId(faturalar),
+    const faturaData = {
       faturaNo: req.body.faturaNo || `FAT-${Date.now()}`,
       faturaTarihi: req.body.faturaTarihi || new Date().toISOString().split('T')[0],
       faturaTuru: req.body.faturaTuru || 'E-FATURA',
@@ -85,14 +81,10 @@ router.post('/', (req, res) => {
         kdvTutari: kdvTutari.toFixed(2),
         digerVergiToplami: '0.00',
         genelToplam: genelToplam.toFixed(2)
-      },
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      }
     };
 
-    faturalar.push(newFatura);
-    writeFile('faturalar.json', faturalar);
-
+    const newFatura = await Faturalar.create(faturaData);
     res.status(201).json(newFatura);
   } catch (error) {
     console.error('Error creating fatura:', error);
@@ -101,17 +93,16 @@ router.post('/', (req, res) => {
 });
 
 // Fatura güncelle
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
-    const faturalar = readFile('faturalar.json');
-    const index = faturalar.findIndex(f => f.id === parseInt(req.params.id));
-
-    if (index === -1) {
+    const existingFatura = await Faturalar.getById(parseInt(req.params.id));
+    
+    if (!existingFatura) {
       return res.status(404).json({ error: 'Fatura bulunamadı' });
     }
 
     // Toplam hesaplamaları yap
-    const lineItems = req.body.lineItems || faturalar[index].lineItems || [];
+    const lineItems = req.body.lineItems || existingFatura.lineItems || [];
     let tutar = 0;
     let iskonto = 0;
     let kdvTutari = 0;
@@ -135,10 +126,8 @@ router.put('/:id', (req, res) => {
     const matrah = tutar - iskonto;
     const genelToplam = matrah + kdvTutari;
 
-    faturalar[index] = {
-      ...faturalar[index],
+    const faturaData = {
       ...req.body,
-      id: parseInt(req.params.id),
       lineItems: lineItems,
       toplamlar: {
         tutar: tutar.toFixed(2),
@@ -147,12 +136,11 @@ router.put('/:id', (req, res) => {
         kdvTutari: kdvTutari.toFixed(2),
         digerVergiToplami: '0.00',
         genelToplam: genelToplam.toFixed(2)
-      },
-      updatedAt: new Date().toISOString()
+      }
     };
 
-    writeFile('faturalar.json', faturalar);
-    res.json(faturalar[index]);
+    const updatedFatura = await Faturalar.update(parseInt(req.params.id), faturaData);
+    res.json(updatedFatura);
   } catch (error) {
     console.error('Error updating fatura:', error);
     res.status(500).json({ error: 'Fatura güncellenirken bir hata oluştu' });
@@ -160,16 +148,15 @@ router.put('/:id', (req, res) => {
 });
 
 // Fatura sil
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
-    const faturalar = readFile('faturalar.json');
-    const filteredFaturalar = faturalar.filter(f => f.id !== parseInt(req.params.id));
-
-    if (faturalar.length === filteredFaturalar.length) {
+    const fatura = await Faturalar.getById(parseInt(req.params.id));
+    
+    if (!fatura) {
       return res.status(404).json({ error: 'Fatura bulunamadı' });
     }
 
-    writeFile('faturalar.json', filteredFaturalar);
+    await Faturalar.delete(parseInt(req.params.id));
     res.json({ message: 'Fatura silindi' });
   } catch (error) {
     console.error('Error deleting fatura:', error);
@@ -178,4 +165,3 @@ router.delete('/:id', (req, res) => {
 });
 
 module.exports = router;
-

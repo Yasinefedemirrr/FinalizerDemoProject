@@ -1,5 +1,5 @@
 const express = require('express');
-const { readFile } = require('../utils/fileManager');
+const { Faturalar, Finansal, Cariler } = require('../utils/dbManager');
 const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
@@ -8,11 +8,13 @@ const router = express.Router();
 router.use(authenticateToken);
 
 // Raporlama verilerini getir
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const faturalar = readFile('faturalar.json');
-    const finansalIslemler = readFile('finansal.json');
-    const cariler = readFile('cariler.json');
+    const [faturalar, finansalIslemler, cariler] = await Promise.all([
+      Faturalar.getAll(),
+      Finansal.getAll(),
+      Cariler.getAll(),
+    ]);
 
     // Fatura istatistikleri
     const toplamFaturaSayisi = faturalar.length;
@@ -36,7 +38,7 @@ router.get('/', (req, res) => {
 
     // Cari istatistikleri
     const toplamCariSayisi = cariler.length;
-    const aktifCariSayisi = cariler.filter(c => c.aktif !== false).length;
+    const aktifCariSayisi = cariler.filter(c => c.aktif !== false && c.aktif !== 0).length;
 
     // Son işlemler (son 10 fatura)
     const sonFaturalar = faturalar
@@ -72,4 +74,3 @@ router.get('/', (req, res) => {
 });
 
 module.exports = router;
-

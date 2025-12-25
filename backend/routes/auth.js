@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { readFile, writeFile, getNextId } = require('../utils/fileManager');
+const { Users } = require('../utils/dbManager');
 const { JWT_SECRET } = require('../middleware/auth');
 
 const router = express.Router();
@@ -15,26 +15,22 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Kullanıcı adı ve şifre gereklidir' });
     }
 
-    const users = readFile('users.json');
-
     // Varsayılan admin kullanıcı yoksa oluştur
-    if (users.length === 0) {
-      const hashedPassword = await bcrypt.hash('admin123', 10);
-      const defaultUser = {
-        id: 1,
-        username: 'admin',
-        password: hashedPassword,
-        role: 'admin',
-        name: 'Admin Kullanıcı'
-      };
-      writeFile('users.json', [defaultUser]);
-      users.push(defaultUser);
-    }
-
-    const user = users.find(u => u.username === username);
-
+    let user = await Users.getByUsername(username);
     if (!user) {
-      return res.status(401).json({ error: 'Kullanıcı adı veya şifre hatalı' });
+      // İlk kullanıcı yoksa admin oluştur
+      const allUsers = await Users.getAll();
+      if (allUsers.length === 0) {
+        const hashedPassword = await bcrypt.hash('admin123', 10);
+        user = await Users.create({
+          username: 'admin',
+          password: hashedPassword,
+          role: 'admin',
+          name: 'Admin Kullanıcı'
+        });
+      } else {
+        return res.status(401).json({ error: 'Kullanıcı adı veya şifre hatalı' });
+      }
     }
 
     const isValidPassword = await bcrypt.compare(password, user.password);
@@ -73,24 +69,19 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Kullanıcı adı ve şifre gereklidir' });
     }
 
-    const users = readFile('users.json');
-    const existingUser = users.find(u => u.username === username);
+    const existingUser = await Users.getByUsername(username);
 
     if (existingUser) {
       return res.status(400).json({ error: 'Bu kullanıcı adı zaten kullanılıyor' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = {
-      id: getNextId(users),
+    const newUser = await Users.create({
       username,
       password: hashedPassword,
       role,
       name: name || username
-    };
-
-    users.push(newUser);
-    writeFile('users.json', users);
+    });
 
     const token = jwt.sign(
       { id: newUser.id, username: newUser.username, role: newUser.role },

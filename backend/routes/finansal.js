@@ -1,5 +1,5 @@
 const express = require('express');
-const { readFile, writeFile, getNextId } = require('../utils/fileManager');
+const { Finansal } = require('../utils/dbManager');
 const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
@@ -8,9 +8,9 @@ const router = express.Router();
 router.use(authenticateToken);
 
 // Tüm finansal işlemleri getir
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const finansalIslemler = readFile('finansal.json');
+    const finansalIslemler = await Finansal.getAll();
     res.json(finansalIslemler);
   } catch (error) {
     console.error('Error fetching finansal islemler:', error);
@@ -19,10 +19,9 @@ router.get('/', (req, res) => {
 });
 
 // Tek bir finansal işlem getir
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
-    const finansalIslemler = readFile('finansal.json');
-    const islem = finansalIslemler.find(i => i.id === parseInt(req.params.id));
+    const islem = await Finansal.getById(parseInt(req.params.id));
 
     if (!islem) {
       return res.status(404).json({ error: 'Finansal işlem bulunamadı' });
@@ -36,19 +35,9 @@ router.get('/:id', (req, res) => {
 });
 
 // Yeni finansal işlem ekle
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   try {
-    const finansalIslemler = readFile('finansal.json');
-    const newIslem = {
-      id: getNextId(finansalIslemler),
-      ...req.body,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    finansalIslemler.push(newIslem);
-    writeFile('finansal.json', finansalIslemler);
-
+    const newIslem = await Finansal.create(req.body);
     res.status(201).json(newIslem);
   } catch (error) {
     console.error('Error creating finansal islem:', error);
@@ -57,24 +46,15 @@ router.post('/', (req, res) => {
 });
 
 // Finansal işlem güncelle
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
-    const finansalIslemler = readFile('finansal.json');
-    const index = finansalIslemler.findIndex(i => i.id === parseInt(req.params.id));
+    const updatedIslem = await Finansal.update(parseInt(req.params.id), req.body);
 
-    if (index === -1) {
+    if (!updatedIslem) {
       return res.status(404).json({ error: 'Finansal işlem bulunamadı' });
     }
 
-    finansalIslemler[index] = {
-      ...finansalIslemler[index],
-      ...req.body,
-      id: parseInt(req.params.id),
-      updatedAt: new Date().toISOString()
-    };
-
-    writeFile('finansal.json', finansalIslemler);
-    res.json(finansalIslemler[index]);
+    res.json(updatedIslem);
   } catch (error) {
     console.error('Error updating finansal islem:', error);
     res.status(500).json({ error: 'Finansal işlem güncellenirken bir hata oluştu' });
@@ -82,16 +62,15 @@ router.put('/:id', (req, res) => {
 });
 
 // Finansal işlem sil
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
-    const finansalIslemler = readFile('finansal.json');
-    const filteredIslemler = finansalIslemler.filter(i => i.id !== parseInt(req.params.id));
-
-    if (finansalIslemler.length === filteredIslemler.length) {
+    const islem = await Finansal.getById(parseInt(req.params.id));
+    
+    if (!islem) {
       return res.status(404).json({ error: 'Finansal işlem bulunamadı' });
     }
 
-    writeFile('finansal.json', filteredIslemler);
+    await Finansal.delete(parseInt(req.params.id));
     res.json({ message: 'Finansal işlem silindi' });
   } catch (error) {
     console.error('Error deleting finansal islem:', error);
@@ -100,4 +79,3 @@ router.delete('/:id', (req, res) => {
 });
 
 module.exports = router;
-
